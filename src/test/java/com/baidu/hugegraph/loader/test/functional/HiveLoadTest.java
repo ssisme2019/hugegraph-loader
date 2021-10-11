@@ -119,7 +119,7 @@ public class HiveLoadTest extends LoadTest {
         dbUtil.execute("TRUNCATE TABLE `created`");
     }
 
-//    @Test
+    @Test
     public void testCustomizedSchema() {
         dbUtil.insert("INSERT INTO `person` VALUES " +
                       "(1,'marko',29,'Beijing')," +
