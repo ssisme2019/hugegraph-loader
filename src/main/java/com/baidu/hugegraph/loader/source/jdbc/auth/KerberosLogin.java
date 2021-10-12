@@ -11,55 +11,47 @@ import java.util.Map;
 
 public class KerberosLogin implements Authentication {
     public static final Logger LOG = Log.logger(KerberosLogin.class);
-    private static final String HIVE_DRIVER = "org.apache.hive.jdbc.HiveDriver";
 
     private static final String ZOOKEEPER_DEFAULT_LOGIN_CONTEXT_NAME = "Client";
     private static final String ZOOKEEPER_SERVER_PRINCIPAL_KEY =
             "zookeeper.server.principal";
 
-    private static Configuration CONF = null;
-    private static String KRB5_FILE = null;
-    private static String USER_NAME = null;
-    private static String USER_KEYTAB_FILE = null;
-    private static String zkQuorum = null;
-    private static String auth = null;
-    private static String sasl_qop = null;
-    private static String zooKeeperNamespace = null;
-    private static String serviceDiscoveryMode = null;
-    private static String principal = null;
+    private  Configuration conf = null;
+    private  String krb5File = null;
+    private  String userName = null;
+    private  String userKeytabFile = null;
+    private  String zkQuorum = null;
+    private  String auth = null;
+    private  String saslQop = null;
+    private  String zooKeeperNamespace = null;
+    private  String serviceDiscoveryMode = null;
+    private  String principal = null;
 
     @Override
     public String auth(JDBCSource source) throws Exception {
-//        if (!MapUtils.isEmpty(source.getProperties())) {
-//            for (Map.Entry<String, String> entry :
-//                    source.getProperties().entrySet()) {
-//                System.setProperty(entry.getKey(), entry.getValue());
-//                LOG.info("property-{}:{}", entry.getKey(), entry.getValue());
-//            }
-//        }
-        CONF = new Configuration();
+        conf = new Configuration();
         String zookeeperPrincipal = "zookeeper/hadoop";
         Map<String, String> clientInfo = source.getPrincipals();
         zkQuorum = clientInfo.get("zk.quorum");
         auth = clientInfo.get("auth");
-        sasl_qop = clientInfo.get("sasl.qop");
+        saslQop = clientInfo.get("sasl.qop");
         zooKeeperNamespace = clientInfo.get("zooKeeperNamespace");
         serviceDiscoveryMode = clientInfo.get("serviceDiscoveryMode");
         principal = clientInfo.get("principal");
-        USER_NAME = clientInfo.get("user.name");
+        userName = clientInfo.get("user.name");
         String sslEnable = clientInfo.get("ssl");
         StringBuilder builder = new StringBuilder();
         if ("KERBEROS".equalsIgnoreCase(auth)) {
             try {
-                USER_KEYTAB_FILE = clientInfo.get("user.keytab");
-                KRB5_FILE = clientInfo.get("krb5.conf");
-                System.setProperty("java.security.krb5.conf", KRB5_FILE);
+                userKeytabFile = clientInfo.get("user.keytab");
+                krb5File = clientInfo.get("krb5.conf");
+                System.setProperty("java.security.krb5.conf", krb5File);
                 zookeeperPrincipal =  clientInfo.get("zookeeperPrincipal");
                 if (StringUtils.isEmpty(zookeeperPrincipal)) {
-                    zookeeperPrincipal = USER_NAME;
+                    zookeeperPrincipal = userName;
                 }
                 LoginUtil.setJaasConf(ZOOKEEPER_DEFAULT_LOGIN_CONTEXT_NAME,
-                        USER_NAME, USER_KEYTAB_FILE);
+                        userName, userKeytabFile);
                 LoginUtil.setZookeeperServerPrincipal(
                         ZOOKEEPER_SERVER_PRINCIPAL_KEY,
                         zookeeperPrincipal);
@@ -75,9 +67,9 @@ public class KerberosLogin implements Authentication {
 //                        "false");
                 UserGroupInformation.setConfiguration(conf);
                 UserGroupInformation.loginUserFromKeytab(
-                        USER_NAME,
-                        USER_KEYTAB_FILE);
-                LoginUtil.login(USER_NAME, USER_KEYTAB_FILE, KRB5_FILE, CONF);
+                        userName,
+                        userKeytabFile);
+                LoginUtil.login(userName, userKeytabFile, krb5File, this.conf);
             } catch (Exception e) {
                 LOG.error(e.getMessage());
                 throw e;
@@ -90,9 +82,9 @@ public class KerberosLogin implements Authentication {
                     .append(serviceDiscoveryMode)
                     .append(";zooKeeperNamespace=")
                     .append(zooKeeperNamespace);
-            if (!StringUtils.isEmpty(sasl_qop)) {
+            if (!StringUtils.isEmpty(saslQop)) {
                 builder.append(";sasl.qop=")
-                        .append(sasl_qop);
+                        .append(saslQop);
             }
             builder.append(";auth=")
                     .append(auth)
